@@ -1,6 +1,7 @@
 mod schema;
 
 pub mod auth;
+pub mod error;
 
 use std::{env, num::NonZeroU32};
 

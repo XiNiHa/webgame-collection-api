@@ -25,7 +25,7 @@ impl PasswordData {
         iterations: NonZeroU32,
     ) -> Result<PasswordData, PasswordEncryptionError> {
         let salt =
-            PasswordData::salt(salt_size).map_err(|_e| PasswordEncryptionError::SaltCreationFailed)?;
+            PasswordData::salt(salt_size).map_err(|_| PasswordEncryptionError::SaltCreationFailed)?;
         let mut hash = [0; digest::SHA512_OUTPUT_LEN];
         pbkdf2::derive(
             PBKDF2_HMAC_SHA512,

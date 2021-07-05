@@ -27,7 +27,7 @@ impl AuthQuery {
                 user_id,
                 extra_info
             FROM public.user_auth_method
-            WHERE type = 'EMAIL' AND identifier = $1
+            WHERE type = 'email' AND identifier = $1
             "#,
             email
         )
