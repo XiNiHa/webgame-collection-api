@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::password_data::PasswordData;
+use super::{AuthMethodType, password_data::PasswordData};
 
 #[derive(Debug)]
 pub enum RegistrationError {
@@ -32,15 +32,6 @@ impl Error for RegistrationError {
     fn code(&self) -> String {
         format!("RegistrationError::{:?}", self)
     }
-}
-
-#[derive(sqlx::Type, PartialEq)]
-#[sqlx(type_name = "auth_method_type", rename_all = "lowercase")]
-pub enum AuthMethodType {
-    Email,
-    Kakao,
-    Google,
-    Facebook,
 }
 
 pub async fn register(

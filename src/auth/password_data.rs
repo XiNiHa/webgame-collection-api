@@ -7,6 +7,8 @@ use ring::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
+
 #[derive(Serialize, Deserialize)]
 pub struct PasswordData {
     hash: String,
@@ -14,8 +16,21 @@ pub struct PasswordData {
     iterations: NonZeroU32,
 }
 
+#[derive(Debug)]
 pub enum PasswordEncryptionError {
     SaltCreationFailed,
+}
+
+impl Error for PasswordEncryptionError {
+    fn message(&self) -> String {
+        match self {
+            PasswordEncryptionError::SaltCreationFailed => "Failed to create salt",
+        }.to_owned()
+    }
+
+    fn code(&self) -> String {
+        format!("PasswordEncryptionError::{:?}", self)
+    }
 }
 
 impl PasswordData {
@@ -24,8 +39,8 @@ impl PasswordData {
         salt_size: usize,
         iterations: NonZeroU32,
     ) -> Result<PasswordData, PasswordEncryptionError> {
-        let salt =
-            PasswordData::salt(salt_size).map_err(|_| PasswordEncryptionError::SaltCreationFailed)?;
+        let salt = PasswordData::salt(salt_size)
+            .map_err(|_| PasswordEncryptionError::SaltCreationFailed)?;
         let mut hash = [0; digest::SHA512_OUTPUT_LEN];
         pbkdf2::derive(
             PBKDF2_HMAC_SHA512,

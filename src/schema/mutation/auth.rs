@@ -1,12 +1,8 @@
 use async_graphql::validators::Email;
-use async_graphql::Error as GraphQLError;
 use async_graphql::*;
 
 use crate::{
-    auth::{
-        password_data::PasswordData,
-        register::{register, AuthMethodType},
-    },
+    auth::{password_data::PasswordData, register::register, AuthMethodType},
     error::Error,
     schema::{
         types::user::{User, UserRegisterInput},
@@ -30,7 +26,7 @@ impl AuthMutation {
 
         let password_data =
             PasswordData::new(&password, config.pbkdf2_salt_size, config.pbkdf2_iterations)
-                .map_err(|_| GraphQLError::new("Password encryption failed"))?;
+                .map_err(|e| e.build())?;
 
         register(
             pool,
