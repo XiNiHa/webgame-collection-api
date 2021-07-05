@@ -1,3 +1,4 @@
+use async_graphql::validators::Email;
 use async_graphql::Error as GraphQLError;
 use async_graphql::*;
 
@@ -18,12 +19,11 @@ pub struct AuthMutation;
 
 #[Object]
 impl AuthMutation {
-    // TODO: add input validation
     async fn register_email(
         &self,
         ctx: &Context<'_>,
         input: UserRegisterInput,
-        email: String,
+        #[graphql(validator(Email))] email: String,
         password: String,
     ) -> Result<User> {
         let AppContext { pool, config } = ctx.data::<AppContext>()?;

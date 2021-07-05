@@ -1,5 +1,6 @@
 use super::scalars::{DateTimeScalar, UuidScalar};
 use async_graphql::*;
+use async_graphql::validators::Email;
 
 #[derive(SimpleObject)]
 pub struct User {
@@ -13,6 +14,7 @@ pub struct User {
 #[derive(InputObject)]
 pub struct UserRegisterInput {
     pub nickname: String,
+    #[graphql(validator(Email))]
     pub email: String,
 }
 

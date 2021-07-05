@@ -1,4 +1,5 @@
 use async_graphql::*;
+use async_graphql::validators::Email;
 
 use crate::{
     auth::password_data::PasswordData,
@@ -10,10 +11,10 @@ pub struct AuthQuery;
 
 #[Object]
 impl AuthQuery {
-    // TODO: add input validation
     async fn login_email(
         &self,
         ctx: &Context<'_>,
+        #[graphql(validator(Email))]
         email: String,
         password: String,
     ) -> Result<Option<LoginResult>> {
