@@ -30,13 +30,21 @@ fn get_graphql_handler() -> Html<String> {
 
 #[cfg(not(feature = "playground"))]
 #[rocket::get("/graphql?<query..>")]
-async fn get_graphql_handler(schema: &State<AppSchema>, auth_info: AuthInfo, query: Query) -> Response {
+async fn get_graphql_handler(
+    schema: &State<AppSchema>,
+    auth_info: AuthInfo,
+    query: Query,
+) -> Response {
     let req: Request = query.into();
     req.data(auth_info).execute(schema).await
 }
 
 #[rocket::post("/graphql", data = "<request>", format = "application/json")]
-async fn post_graphql_handler(schema: &State<AppSchema>, auth_info: AuthInfo, request: Request) -> Response {
+async fn post_graphql_handler(
+    schema: &State<AppSchema>,
+    auth_info: AuthInfo,
+    request: Request,
+) -> Response {
     request.data(auth_info).execute(schema).await
 }
 

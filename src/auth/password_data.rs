@@ -25,7 +25,8 @@ impl Error for PasswordEncryptionError {
     fn message(&self) -> String {
         match self {
             PasswordEncryptionError::SaltCreationFailed => "Failed to create salt",
-        }.to_owned()
+        }
+        .to_owned()
     }
 
     fn code(&self) -> String {

@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{AuthMethodType, password_data::PasswordData};
+use super::{password_data::PasswordData, AuthMethodType};
 
 #[derive(Debug)]
 pub enum RegistrationError {

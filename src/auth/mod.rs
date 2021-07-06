@@ -1,7 +1,7 @@
 pub mod auth_info;
-pub mod register;
-pub mod password_data;
 pub mod login;
+pub mod password_data;
+pub mod register;
 
 #[derive(sqlx::Type, PartialEq)]
 #[sqlx(type_name = "auth_method_type", rename_all = "lowercase")]

@@ -25,7 +25,9 @@ pub struct DateTimeScalar(pub DateTime<Utc>);
 impl ScalarType for DateTimeScalar {
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(str) = &value {
-            Ok(DateTimeScalar(DateTime::parse_from_rfc3339(str)?.with_timezone(&Utc)))
+            Ok(DateTimeScalar(
+                DateTime::parse_from_rfc3339(str)?.with_timezone(&Utc),
+            ))
         } else {
             Err(InputValueError::expected_type(value))
         }

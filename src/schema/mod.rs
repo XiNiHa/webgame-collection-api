@@ -1,10 +1,13 @@
 use async_graphql::*;
 
-use self::{mutation::auth::AuthMutation, query::{auth::AuthQuery, game::GameQuery, user::UserQuery}};
+use self::{
+    mutation::auth::AuthMutation,
+    query::{auth::AuthQuery, game::GameQuery, user::UserQuery},
+};
 
-pub mod types;
-mod query;
 mod mutation;
+mod query;
+pub mod types;
 
 pub type AppSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 

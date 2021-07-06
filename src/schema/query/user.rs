@@ -1,7 +1,14 @@
 use async_graphql::*;
 use sqlx::PgPool;
 
-use crate::{auth::auth_info::AuthInfo, error::Error, schema::types::{scalars::{DateTimeScalar, UuidScalar}, user::User}};
+use crate::{
+    auth::auth_info::AuthInfo,
+    error::Error,
+    schema::types::{
+        scalars::{DateTimeScalar, UuidScalar},
+        user::User,
+    },
+};
 
 #[derive(Debug)]
 enum UserQueryError {
