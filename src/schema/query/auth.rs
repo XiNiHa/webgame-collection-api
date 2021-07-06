@@ -1,7 +1,16 @@
 use async_graphql::validators::Email;
 use async_graphql::*;
+use sqlx::PgPool;
 
-use crate::{auth::{login::verify_auth_method, AuthMethodType}, error::Error, schema::{types::user::LoginResult, AppContext}};
+use crate::{
+    auth::{
+        login::{create_login_result, verify_auth_method},
+        AuthMethodType,
+    },
+    config::CONFIG,
+    error::Error,
+    schema::types::user::LoginResult,
+};
 
 #[derive(Default)]
 pub struct AuthQuery;
@@ -14,19 +23,16 @@ impl AuthQuery {
         #[graphql(validator(Email))] email: String,
         password: String,
     ) -> Result<Option<LoginResult>> {
-        let AppContext { pool, .. } = ctx.data::<AppContext>()?;
+        let pool = ctx.data::<PgPool>()?;
 
-        if verify_auth_method(pool, AuthMethodType::Email, email, Some(password))
+        let user_id = verify_auth_method(pool, AuthMethodType::Email, email, Some(password))
             .await
-            .map_err(|e| e.build())?
-        {
-            // TODO: generate actual tokens and return it
-            Ok(Some(LoginResult {
-                access_token: "random access token".to_string(),
-                refresh_token: "random refresh token".to_string(),
-            }))
-        } else {
-            Ok(None)
-        }
+            .map_err(|e| e.build())?;
+
+        let login_result =
+            create_login_result(&user_id, &CONFIG.jwt_secret, CONFIG.refresh_token_size)
+                .map_err(|e| e.build())?;
+
+        Ok(Some(login_result))
     }
 }

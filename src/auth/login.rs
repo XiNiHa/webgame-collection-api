@@ -1,6 +1,10 @@
-use sqlx::PgPool;
+use chrono::{Duration, Utc};
+use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use ring::rand::{SecureRandom, SystemRandom};
+use serde::{Deserialize, Serialize};
+use sqlx::{types::Uuid, PgPool};
 
-use crate::error::Error;
+use crate::{error::Error, schema::types::user::LoginResult};
 
 use super::{password_data::PasswordData, AuthMethodType};
 
@@ -11,6 +15,7 @@ pub enum LoginError {
     MethodNotFound,
     InvalidMethodData,
     WrongPassword,
+    TokenCreationFailed,
 }
 
 impl Error for LoginError {
@@ -23,6 +28,7 @@ impl Error for LoginError {
             LoginError::MethodNotFound => "No matching auth method found",
             LoginError::InvalidMethodData => "Invalid auth method data detected",
             LoginError::WrongPassword => "Wrong password",
+            LoginError::TokenCreationFailed => "Token creation failed",
         }
         .to_owned()
     }
@@ -37,7 +43,7 @@ pub async fn verify_auth_method(
     auth_type: AuthMethodType,
     identifier: String,
     password: Option<String>,
-) -> Result<bool, LoginError> {
+) -> Result<Uuid, LoginError> {
     let method = sqlx::query!(
         r#"
         SELECT
@@ -55,8 +61,10 @@ pub async fn verify_auth_method(
     .ok_or(LoginError::MethodNotFound)?;
 
     let password_data: Option<PasswordData> = match method.extra_info {
-        Some(data) => Some(serde_json::from_value(data).map_err(|_| LoginError::InvalidMethodData)?),
-        None => None
+        Some(data) => {
+            Some(serde_json::from_value(data).map_err(|_| LoginError::InvalidMethodData)?)
+        }
+        None => None,
     };
 
     if auth_type == AuthMethodType::Email
@@ -66,6 +74,41 @@ pub async fn verify_auth_method(
     {
         Err(LoginError::WrongPassword)
     } else {
-        Ok(true)
+        Ok(method.user_id)
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+}
+
+pub fn create_login_result(
+    uuid: &Uuid,
+    secret: &[u8],
+    refresh_token_size: usize,
+) -> Result<LoginResult, LoginError> {
+    let header = Header::new(Algorithm::HS512);
+    let claims = Claims {
+        sub: uuid.to_string(),
+        exp: Utc::now()
+            .checked_add_signed(Duration::hours(1))
+            .ok_or(LoginError::TokenCreationFailed)?
+            .timestamp() as usize,
+    };
+
+    let access_token = jsonwebtoken::encode(&header, &claims, &EncodingKey::from_secret(secret))
+        .map_err(|_| LoginError::TokenCreationFailed)?;
+
+    let mut buf: Vec<u8> = vec![0; refresh_token_size];
+    let rng = SystemRandom::new();
+    rng.fill(&mut buf)
+        .map_err(|_| LoginError::TokenCreationFailed)?;
+    let refresh_token = base64::encode(&buf);
+
+    Ok(LoginResult {
+        access_token,
+        refresh_token,
+    })
 }

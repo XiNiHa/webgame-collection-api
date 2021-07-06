@@ -1,11 +1,9 @@
 use std::iter::FromIterator;
 
 use async_graphql::*;
+use sqlx::PgPool;
 
-use crate::schema::{
-    types::{game::Game, localized_string::LocalizedString},
-    AppContext,
-};
+use crate::schema::types::{game::Game, localized_string::LocalizedString};
 
 #[derive(Default)]
 pub struct GameQuery;
@@ -13,7 +11,7 @@ pub struct GameQuery;
 #[Object]
 impl GameQuery {
     async fn games(&self, ctx: &Context<'_>) -> Result<Vec<Game>> {
-        let AppContext { pool, .. } = ctx.data::<AppContext>()?;
+        let pool = ctx.data::<PgPool>()?;
 
         let rows = sqlx::query!(
             r#"

@@ -1,3 +1,4 @@
+pub mod auth_info;
 pub mod register;
 pub mod password_data;
 pub mod login;

@@ -1,13 +1,12 @@
 use async_graphql::validators::Email;
 use async_graphql::*;
+use sqlx::PgPool;
 
 use crate::{
     auth::{password_data::PasswordData, register::register, AuthMethodType},
+    config::CONFIG,
     error::Error,
-    schema::{
-        types::user::{User, UserRegisterInput},
-        AppContext,
-    },
+    schema::types::user::{User, UserRegisterInput},
 };
 
 #[derive(Default)]
@@ -22,10 +21,10 @@ impl AuthMutation {
         #[graphql(validator(Email))] email: String,
         password: String,
     ) -> Result<User> {
-        let AppContext { pool, config } = ctx.data::<AppContext>()?;
+        let pool = ctx.data::<PgPool>()?;
 
         let password_data =
-            PasswordData::new(&password, config.pbkdf2_salt_size, config.pbkdf2_iterations)
+            PasswordData::new(&password, CONFIG.pbkdf2_salt_size, CONFIG.pbkdf2_iterations)
                 .map_err(|e| e.build())?;
 
         register(
