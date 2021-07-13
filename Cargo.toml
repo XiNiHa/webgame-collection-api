@@ -8,10 +8,11 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.5.0-rc.1"
-async-graphql = { git = "https://github.com/async-graphql/async-graphql" }
-async-graphql-rocket = { git = "https://github.com/async-graphql/async-graphql" }
-sqlx = { version=  "0.5.5", features = [ "runtime-tokio-rustls", "postgres", "uuid", "json", "chrono" ] }
+env_logger = "0.8.4"
+actix-web = "4.0.0-beta.8"
+async-graphql = { git = "https://github.com/async-graphql/async-graphql", branch="actix-web-v4-beta" }
+async-graphql-actix-web = { git = "https://github.com/async-graphql/async-graphql", branch="actix-web-v4-beta" }
+sqlx = { version = "0.5.5", features = [ "runtime-tokio-rustls", "postgres", "uuid", "json", "chrono" ] }
 chrono = "0.4.19"
 serde = "1.0.126"
 serde_json = "1.0.64"
@@ -21,6 +22,10 @@ base64 = "0.13.0"
 jsonwebtoken = "7.2.0"
 lazy_static = "1.4.0"
 anyhow = "1.0.41"
+tokio = { version = "1.8.0", features = ["sync"] }
+tokio-stream = "0.1.7"
+futures = "0.3.15"
 
 [features]
 playground = []
+kds = []

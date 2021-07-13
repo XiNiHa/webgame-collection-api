@@ -1,3 +1,8 @@
-pub mod auth;
-pub mod game;
-pub mod user;
+use async_graphql::*;
+
+mod auth;
+mod game;
+mod user;
+
+#[derive(MergedObject, Default)]
+pub struct QueryRoot(auth::AuthQuery, game::GameQuery, user::UserQuery);

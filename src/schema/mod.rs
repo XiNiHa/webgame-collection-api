@@ -1,18 +1,10 @@
 use async_graphql::*;
 
-use self::{
-    mutation::auth::AuthMutation,
-    query::{auth::AuthQuery, game::GameQuery, user::UserQuery},
-};
+use self::{mutation::MutationRoot, query::QueryRoot, subscription::SubscriptionRoot};
 
-mod mutation;
-mod query;
+pub mod mutation;
+pub mod query;
+pub mod subscription;
 pub mod types;
 
-pub type AppSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
-
-#[derive(MergedObject, Default)]
-pub struct QueryRoot(AuthQuery, GameQuery, UserQuery);
-
-#[derive(MergedObject, Default)]
-pub struct MutationRoot(AuthMutation);
+pub type AppSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
