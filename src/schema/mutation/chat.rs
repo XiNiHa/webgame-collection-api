@@ -1,4 +1,5 @@
 use async_graphql::*;
+use tokio::sync::mpsc::Sender;
 
 use crate::{
     auth::auth_info::AuthInfo,
@@ -37,15 +38,14 @@ impl ChatMutation {
         message: String,
     ) -> Result<Chat> {
         let AuthInfo { user_id } = ctx.data::<AuthInfo>()?;
+        let chat_tx = ctx.data::<Sender<ChatData>>()?;
         let sender_id = user_id.ok_or(ChatMutationError::NotAuthorized.build())?;
 
-        let mut buffer = crate::chat::CHAT_BUFFER.lock().await;
-
-        buffer.push(ChatData {
+        chat_tx.send(ChatData {
             sender_id,
             target_ids: vec![target_id.0],
             message: message.clone(),
-        });
+        }).await?;
 
         Ok(Chat {
             sender_id: UuidScalar(sender_id),
