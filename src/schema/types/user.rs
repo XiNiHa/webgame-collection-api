@@ -1,10 +1,10 @@
-use super::scalars::{DateTimeScalar, UuidScalar};
+use super::scalars::DateTimeScalar;
 use async_graphql::validators::Email;
 use async_graphql::*;
 
 #[derive(SimpleObject)]
 pub struct User {
-    pub id: UuidScalar,
+    pub id: ID,
     pub nickname: String,
     pub email: String,
     pub registered_at: DateTimeScalar,

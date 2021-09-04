@@ -3,7 +3,8 @@ use sqlx::PgPool;
 use crate::{
     error::Error,
     schema::types::{
-        scalars::{DateTimeScalar, UuidScalar},
+        node::{IdData, NodeIdent},
+        scalars::DateTimeScalar,
         user::{User, UserRegisterInput},
     },
 };
@@ -101,7 +102,11 @@ pub async fn register(
     tx.commit().await.map_err(RegistrationError::DbError)?;
 
     Ok(User {
-        id: UuidScalar(user.id),
+        id: IdData {
+            ty: NodeIdent::User,
+            uuid: user.id,
+        }
+        .to_id_scalar(),
         nickname: user.nickname,
         email: user.email,
         registered_at: DateTimeScalar(user.registered_at),

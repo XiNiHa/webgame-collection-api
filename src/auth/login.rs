@@ -2,7 +2,8 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Uuid, PgPool};
+use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{error::Error, schema::types::user::LoginResult};
 

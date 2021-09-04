@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use sqlx::types::Uuid;
+use uuid::Uuid;
 use tokio::sync::{mpsc, Mutex};
 
-use crate::schema::types::{chat::Chat, scalars::UuidScalar};
+use crate::schema::types::{chat::Chat, node::{IdData, NodeIdent}};
 
 pub struct ChatData {
     pub sender_id: Uuid,
@@ -26,7 +26,10 @@ pub async fn broadcast(mut rx: mpsc::Receiver<ChatData>) {
                     map_guard.remove(&user_id);
                 } else if let Err(e) = tx
                     .send(Chat {
-                        sender_id: UuidScalar(chat.sender_id),
+                        sender_id: IdData {
+                            ty: NodeIdent::User,
+                            uuid: chat.sender_id,
+                        }.to_id_scalar(),
                         message: chat.message.clone(),
                     })
                     .await

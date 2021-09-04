@@ -5,9 +5,11 @@ authors = ["XiNiHa <anesin1109@naver.com>"]
 edition = "2018"
 resolver = "2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
 
 [dependencies]
+webgame-collection-api-macros = { path="macros", version="0.1.0" }
+
 env_logger = "0.8.4"
 actix-web = "4.0.0-beta.8"
 async-graphql = { git = "https://github.com/async-graphql/async-graphql", branch="actix-web-v4-beta" }
@@ -19,6 +21,7 @@ serde_json = "1.0.64"
 dotenv = "0.15.0"
 ring = "0.16.20"
 base64 = "0.13.0"
+uuid = "0.8.2"
 jsonwebtoken = "7.2.0"
 lazy_static = "1.4.0"
 anyhow = "1.0.41"

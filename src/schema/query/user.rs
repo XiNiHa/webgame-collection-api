@@ -5,7 +5,8 @@ use crate::{
     auth::auth_info::AuthInfo,
     error::Error,
     schema::types::{
-        scalars::{DateTimeScalar, UuidScalar},
+        node::{IdData, NodeIdent},
+        scalars::DateTimeScalar,
         user::User,
     },
 };
@@ -54,7 +55,11 @@ impl UserQuery {
         .ok_or(UserQueryError::NotFound.build())?;
 
         Ok(User {
-            id: UuidScalar(user.id),
+            id: IdData {
+                ty: NodeIdent::User,
+                uuid: user.id,
+            }
+            .to_id_scalar(),
             nickname: user.nickname,
             email: user.email,
             registered_at: DateTimeScalar(user.registered_at),

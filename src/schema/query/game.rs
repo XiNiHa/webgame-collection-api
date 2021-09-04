@@ -3,7 +3,10 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 use crate::schema::types::{
-    game::Game, localized_string::LocalizedString, scalars::DateTimeScalar,
+    game::Game,
+    localized_string::LocalizedString,
+    node::{IdData, NodeIdent},
+    scalars::DateTimeScalar,
 };
 
 #[derive(Default)]
@@ -68,7 +71,11 @@ impl GameQuery {
                     Edge::new(
                         DateTimeScalar(row.created_at),
                         Game {
-                            id: row.id,
+                            id: IdData {
+                                ty: NodeIdent::Game,
+                                uuid: row.id,
+                            }
+                            .to_id_scalar(),
                             name: row.name,
                             min_players: row.min_players,
                             max_players: row.max_players,

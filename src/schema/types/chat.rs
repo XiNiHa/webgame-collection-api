@@ -1,9 +1,7 @@
 use async_graphql::*;
 
-use super::scalars::UuidScalar;
-
 #[derive(SimpleObject)]
 pub struct Chat {
-    pub sender_id: UuidScalar,
+    pub sender_id: ID,
     pub message: String,
 }

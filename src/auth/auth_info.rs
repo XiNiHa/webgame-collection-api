@@ -3,7 +3,7 @@ use std::{convert::Infallible, pin::Pin, str::FromStr};
 use actix_web::{dev::Payload, FromRequest, HttpRequest};
 use futures::Future;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
-use sqlx::types::Uuid;
+use uuid::Uuid;
 
 use crate::{auth::login::Claims, config::CONFIG};
 
