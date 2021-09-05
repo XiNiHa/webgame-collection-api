@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
-use uuid::Uuid;
 use tokio::sync::{mpsc, Mutex};
+use uuid::Uuid;
 
-use crate::schema::types::{chat::Chat, node::{IdData, NodeIdent}};
+use crate::schema::types::{
+    chat::Chat,
+    node::{IdData, NodeIdent},
+};
 
 pub struct ChatData {
     pub sender_id: Uuid,
@@ -29,7 +32,8 @@ pub async fn broadcast(mut rx: mpsc::Receiver<ChatData>) {
                         sender_id: IdData {
                             ty: NodeIdent::User,
                             uuid: chat.sender_id,
-                        }.to_id_scalar(),
+                        }
+                        .to_id_scalar(),
                         message: chat.message.clone(),
                     })
                     .await

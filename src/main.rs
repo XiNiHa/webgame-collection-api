@@ -5,8 +5,6 @@ pub mod chat;
 pub mod config;
 pub mod error;
 
-use std::future;
-
 use actix_web::{
     guard::Header, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Result,
 };

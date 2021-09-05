@@ -37,8 +37,7 @@ impl NodeQuery {
         let id_data = IdData::try_from(id).map_err(|e| NodeQueryError::IdParseError(e).build())?;
         let pool = ctx.data::<PgPool>()?;
 
-        let node =
-            id_data
+        let node = id_data
             .ty
             .resolve(&id_data.uuid, &pool)
             .await
