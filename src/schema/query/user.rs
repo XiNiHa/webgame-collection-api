@@ -1,5 +1,6 @@
 use async_graphql::*;
 use sqlx::PgPool;
+use webgame_collection_api_macros::Error;
 
 use crate::{
     auth::auth_info::AuthInfo,
@@ -11,24 +12,12 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Error)]
 enum UserQueryError {
+    #[error(message = "Database error")]
     DbError(sqlx::Error),
+    #[error(message = "Not found")]
     NotFound,
-}
-
-impl Error for UserQueryError {
-    fn message(&self) -> String {
-        match self {
-            UserQueryError::DbError(_) => "Database error",
-            UserQueryError::NotFound => "Not found",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("UserQueryError::{:?}", self)
-    }
 }
 
 #[derive(Default)]

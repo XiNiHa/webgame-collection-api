@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use async_graphql::*;
 use tokio::sync::mpsc::Sender;
+use webgame_collection_api_macros::Error;
 
 use crate::{
     auth::auth_info::AuthInfo,
@@ -13,22 +14,10 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Error)]
 enum ChatMutationError {
+    #[error(message = "Invalid target ID")]
     InvalidTargetId(IdDataError),
-}
-
-impl Error for ChatMutationError {
-    fn message(&self) -> String {
-        match self {
-            ChatMutationError::InvalidTargetId(_) => "Invalid target ID",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("ChatMutationError::{:?}", self)
-    }
 }
 
 #[derive(Default)]

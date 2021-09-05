@@ -4,39 +4,26 @@ use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
+use webgame_collection_api_macros::Error;
 
-use crate::{error::Error, schema::types::user::LoginResult};
+use crate::schema::types::user::LoginResult;
 
-use super::{password_data::PasswordData, AuthMethodType};
+use super::{password_data::PasswordData, AuthMethodType, REF_TOKEN_REDIS_KEY};
 
-#[derive(Debug)]
+#[derive(Error)]
 pub enum LoginError {
+    #[error(message = "Database error")]
     DbError(sqlx::Error),
+    #[error(message = "Password not provided while required for the requested method type")]
     PasswordNotProvided,
+    #[error(message = "No matching auth method found")]
     MethodNotFound,
+    #[error(message = "Invalid auth method data detected")]
     InvalidMethodData,
+    #[error(message = "Wrong password")]
     WrongPassword,
+    #[error(message = "Token creation failed")]
     TokenCreationFailed,
-}
-
-impl Error for LoginError {
-    fn message(&self) -> String {
-        match self {
-            LoginError::DbError(_) => "Database error",
-            LoginError::PasswordNotProvided => {
-                "Password not provided while required for the requested method type"
-            }
-            LoginError::MethodNotFound => "No matching auth method found",
-            LoginError::InvalidMethodData => "Invalid auth method data detected",
-            LoginError::WrongPassword => "Wrong password",
-            LoginError::TokenCreationFailed => "Token creation failed",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("LoginError::{:?}", self)
-    }
 }
 
 pub async fn verify_auth_method(

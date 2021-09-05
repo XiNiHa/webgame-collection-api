@@ -1,38 +1,24 @@
 use sqlx::PgPool;
+use webgame_collection_api_macros::Error;
 
-use crate::{
-    error::Error,
-    schema::types::{
-        node::{IdData, NodeIdent},
-        scalars::DateTimeScalar,
-        user::{User, UserRegisterInput},
-    },
+use crate::schema::types::{
+    node::{IdData, NodeIdent},
+    scalars::DateTimeScalar,
+    user::{User, UserRegisterInput},
 };
 
 use super::{password_data::PasswordData, AuthMethodType};
 
-#[derive(Debug)]
+#[derive(Error)]
 pub enum RegistrationError {
+    #[error(message = "Database error")]
     DbError(sqlx::Error),
+    #[error(message = "User already exists")]
     UserAlreadyExists,
+    #[error(message = "Password data not present")]
     PasswordDataNotPresent,
+    #[error(message = "Password data invalid")]
     PasswordDataInvalid,
-}
-
-impl Error for RegistrationError {
-    fn message(&self) -> String {
-        match self {
-            RegistrationError::DbError(_) => "Database error",
-            RegistrationError::UserAlreadyExists => "User already exists",
-            RegistrationError::PasswordDataNotPresent => "Password data not present",
-            RegistrationError::PasswordDataInvalid => "Password data invalid",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("RegistrationError::{:?}", self)
-    }
 }
 
 pub async fn register(

@@ -6,8 +6,7 @@ use ring::{
     rand::{SecureRandom, SystemRandom},
 };
 use serde::{Deserialize, Serialize};
-
-use crate::error::Error;
+use webgame_collection_api_macros::Error;
 
 #[derive(Serialize, Deserialize)]
 pub struct PasswordData {
@@ -16,22 +15,10 @@ pub struct PasswordData {
     iterations: NonZeroU32,
 }
 
-#[derive(Debug)]
+#[derive(Error)]
 pub enum PasswordEncryptionError {
+    #[error(message = "Failed to create salt")]
     SaltCreationFailed,
-}
-
-impl Error for PasswordEncryptionError {
-    fn message(&self) -> String {
-        match self {
-            PasswordEncryptionError::SaltCreationFailed => "Failed to create salt",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("PasswordEncryptionError::{:?}", self)
-    }
 }
 
 impl PasswordData {

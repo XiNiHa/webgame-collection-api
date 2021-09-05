@@ -13,9 +13,9 @@ use super::{
 #[derive(Interface, GenNodeIdent)]
 #[graphql(field(name = "id", type = "&ID"))]
 pub enum Node {
-    #[flat_type(resolver = "user_resolver")]
+    #[node_ident(resolver = "user_resolver")]
     User(User),
-    #[flat_type(resolver = "game_resolver")]
+    #[node_ident(resolver = "game_resolver")]
     Game(Game),
 }
 

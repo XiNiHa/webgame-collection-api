@@ -4,8 +4,9 @@ use actix_web::{dev::Payload, FromRequest, HttpRequest};
 use futures::Future;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use uuid::Uuid;
+use webgame_collection_api_macros::Error;
 
-use crate::{auth::login::Claims, config::CONFIG, error::Error};
+use crate::{auth::login::Claims, config::CONFIG};
 
 use super::get_invalid_token_key;
 
@@ -129,22 +130,10 @@ impl FromRequest for AuthInfo {
     }
 }
 
-#[derive(Debug)]
+#[derive(Error)]
 pub enum AuthError {
+    #[error(message = "Not authorized")]
     NotAuthorized,
+    #[error(message = "Invalidated auth token")]
     Invalidated,
-}
-
-impl Error for AuthError {
-    fn message(&self) -> String {
-        match self {
-            AuthError::NotAuthorized => "Not authorized",
-            AuthError::Invalidated => "Invalidated auth token",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("AuthError::{:?}", self)
-    }
 }

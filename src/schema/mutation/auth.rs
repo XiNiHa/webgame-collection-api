@@ -1,6 +1,7 @@
 use async_graphql::validators::Email;
 use async_graphql::*;
 use sqlx::PgPool;
+use webgame_collection_api_macros::Error;
 
 use crate::{
     auth::{
@@ -15,22 +16,10 @@ use crate::{
     schema::types::user::{LoginResult, User, UserRegisterInput},
 };
 
-#[derive(Debug)]
+#[derive(Error)]
 pub enum AuthMutationError {
+    #[error(message = "Redis error")]
     RedisError(redis::RedisError),
-}
-
-impl Error for AuthMutationError {
-    fn message(&self) -> String {
-        match self {
-            AuthMutationError::RedisError(_) => "Redis error",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("AuthMutationError::{:?}", self)
-    }
 }
 
 #[derive(Default)]

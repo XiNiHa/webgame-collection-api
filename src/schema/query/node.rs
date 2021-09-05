@@ -2,30 +2,19 @@ use std::convert::TryFrom;
 
 use async_graphql::*;
 use sqlx::PgPool;
+use webgame_collection_api_macros::Error;
 
 use crate::{
     error::Error,
     schema::types::node::{IdData, IdDataError, Node},
 };
 
-#[derive(Debug)]
+#[derive(Error)]
 enum NodeQueryError {
+    #[error(message = "ID parsing failed")]
     IdParseError(IdDataError),
+    #[error(message = "Resolver not found for the node type")]
     ResolverNotFound,
-}
-
-impl Error for NodeQueryError {
-    fn message(&self) -> String {
-        match self {
-            NodeQueryError::IdParseError(_) => "ID parsing failed",
-            NodeQueryError::ResolverNotFound => "Resolver not found for the node type",
-        }
-        .to_owned()
-    }
-
-    fn code(&self) -> String {
-        format!("NodeQueryError::{:?}", self)
-    }
 }
 
 #[derive(Default)]
