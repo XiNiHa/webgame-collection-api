@@ -29,6 +29,8 @@ tokio = { version = "1.8.0", features = ["sync"] }
 tokio-stream = "0.1.7"
 futures = "0.3.15"
 config = "0.11.0"
+redis = { version = "0.21.1", features = ["tokio-comp"] }
+deadpool-redis = { version = "0.9.0", features = ["config"] }
 
 [features]
 playground = []

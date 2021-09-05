@@ -37,10 +37,15 @@ async fn playground_handler() -> Result<HttpResponse> {
 async fn graphql_handler(
     schema: web::Data<AppSchema>,
     req: Request,
-    auth_info: AuthInfo,
+    mut auth_info: AuthInfo,
     chat_tx: web::Data<Sender<ChatData>>,
+    redis_pool: web::Data<deadpool_redis::Pool>,
 ) -> Response {
     let cloned = chat_tx.get_ref().clone();
+    if let Ok(ref mut redis_conn) = redis_pool.get().await {
+        auth_info.verify(redis_conn).await;
+    }
+
     schema
         .execute(req.into_inner().data(auth_info).data(cloned))
         .await
@@ -52,22 +57,34 @@ async fn subscription_handler(
     req: HttpRequest,
     stream: web::Payload,
     chat_tx: web::Data<Sender<ChatData>>,
+    redis_pool: web::Data<deadpool_redis::Pool>,
 ) -> Result<HttpResponse> {
     let cloned = chat_tx.get_ref().clone();
 
-    WSSubscription::start_with_initializer(AppSchema::clone(&*schema), &req, stream, |value| {
-        let mut data = Data::default();
+    WSSubscription::start_with_initializer(
+        AppSchema::clone(&*schema),
+        &req,
+        stream,
+        |value| async move {
+            let mut data = Data::default();
 
-        data.insert(AuthInfo::from_header(
-            value
-                .as_object()
-                .and_then(|m| m.get("Authorization"))
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-        ));
-        data.insert(cloned);
-        future::ready(Ok(data))
-    })
+            let mut auth_info = AuthInfo::from_header(
+                value
+                    .as_object()
+                    .and_then(|m| m.get("Authorization"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+            );
+
+            if let Ok(ref mut redis_conn) = redis_pool.get().await {
+                auth_info.verify(redis_conn).await;
+            }
+
+            data.insert(auth_info);
+            data.insert(cloned);
+            Ok(data)
+        },
+    )
 }
 
 #[actix_web::main]
@@ -81,12 +98,17 @@ async fn main() -> std::io::Result<()> {
         (tx, tokio::spawn(chat::broadcast(rx)))
     };
 
-    let schema_data = web::Data::new(build_schema().await);
+    let postgres_pool = build_postgres_pool().await;
+    let redis_pool = build_redis_pool();
+
+    let schema_data = web::Data::new(build_schema(postgres_pool, redis_pool.clone()).await);
     let chat_tx_data = web::Data::new(chat_tx.clone());
+    let redis_pool_data = web::Data::new(redis_pool);
 
     let actix_result = HttpServer::new(move || {
         let app = App::new()
             .app_data(schema_data.clone())
+            .app_data(redis_pool_data.clone())
             .wrap(Logger::default())
             .route("/graphql", web::post().to(graphql_handler))
             .route(
@@ -113,20 +135,25 @@ async fn main() -> std::io::Result<()> {
     actix_result
 }
 
-async fn build_schema() -> AppSchema {
+async fn build_schema(postgres_pool: PgPool, redis_pool: deadpool_redis::Pool) -> AppSchema {
     AppSchema::build(
         QueryRoot::default(),
         MutationRoot::default(),
         SubscriptionRoot::default(),
     )
-    .data(build_pool().await)
+    .data(postgres_pool)
+    .data(redis_pool)
     .finish()
 }
 
-async fn build_pool() -> PgPool {
+async fn build_postgres_pool() -> PgPool {
     PgPoolOptions::new()
         .max_connections(5)
         .connect(&CONFIG.database_url)
         .await
         .unwrap()
+}
+
+fn build_redis_pool() -> deadpool_redis::Pool {
+    CONFIG.redis.create_pool().unwrap()
 }

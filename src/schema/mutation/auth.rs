@@ -3,11 +3,35 @@ use async_graphql::*;
 use sqlx::PgPool;
 
 use crate::{
-    auth::{password_data::PasswordData, register::register, AuthMethodType},
+    auth::{
+        auth_info::{AuthError, AuthInfo},
+        login::{create_login_result, register_refresh_token, verify_auth_method},
+        password_data::PasswordData,
+        register::register,
+        AuthMethodType,
+    },
     config::CONFIG,
     error::Error,
-    schema::types::user::{User, UserRegisterInput},
+    schema::types::user::{LoginResult, User, UserRegisterInput},
 };
+
+#[derive(Debug)]
+pub enum AuthMutationError {
+    RedisError(redis::RedisError),
+}
+
+impl Error for AuthMutationError {
+    fn message(&self) -> String {
+        match self {
+            AuthMutationError::RedisError(_) => "Redis error",
+        }
+        .to_owned()
+    }
+
+    fn code(&self) -> String {
+        format!("AuthMutationError::{:?}", self)
+    }
+}
 
 #[derive(Default)]
 pub struct AuthMutation;
@@ -36,5 +60,38 @@ impl AuthMutation {
         )
         .await
         .map_err(|e| e.build())
+    }
+
+    async fn login_email(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(Email))] email: String,
+        password: String,
+    ) -> Result<Option<LoginResult>> {
+        let pg_pool = ctx.data::<PgPool>()?;
+        let mut redis_conn = ctx.data::<deadpool_redis::Pool>()?.get().await?;
+
+        let user_id = verify_auth_method(pg_pool, AuthMethodType::Email, email, Some(password))
+            .await
+            .map_err(|e| e.build())?;
+
+        let login_result =
+            create_login_result(&user_id, &CONFIG.jwt_secret, CONFIG.refresh_token_size)
+                .map_err(|e| e.build())?;
+
+        Ok(Some(login_result))
+    }
+
+    async fn logout(&self, ctx: &Context<'_>) -> Result<bool> {
+        let auth_info = ctx
+            .data::<Option<AuthInfo>>()?
+            .as_ref()
+            .ok_or(AuthError::Invalidated.build())?;
+        let mut redis_conn = ctx.data::<deadpool_redis::Pool>()?.get().await?;
+
+        auth_info
+            .invalidate(&mut redis_conn)
+            .await
+            .map_err(|e| AuthMutationError::RedisError(e).build())
     }
 }

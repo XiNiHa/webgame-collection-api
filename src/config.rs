@@ -11,12 +11,13 @@ pub struct AppConfig {
     #[serde(deserialize_with = "deserialize_base64_string")]
     pub jwt_secret: Vec<u8>,
     pub refresh_token_size: usize,
+    pub redis: deadpool_redis::Config,
 }
 
 impl AppConfig {
     pub fn from_env() -> Result<Self, ConfigError> {
         let mut cfg = Config::new();
-        cfg.merge(Environment::new())?;
+        cfg.merge(Environment::new().separator("__"))?;
         cfg.try_into()
     }
 }

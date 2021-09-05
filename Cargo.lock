@@ -592,6 +592,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "combine"
+version = "4.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a909e4d93292cd8e9c42e189f61681eff9d67b6541f96b8a1a737f23737bd001"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "memchr",
+ "pin-project-lite",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "config"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -733,6 +747,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpool"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef82259c587bceda08349f28ff00f69ae4c897898f254140af6021eb218e8232"
+dependencies = [
+ "async-trait",
+ "config",
+ "num_cpus",
+ "serde 1.0.126",
+ "tokio",
+]
+
+[[package]]
+name = "deadpool-redis"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58f31ab753d882c470926de2b34f42ed03e6e0661b609586825391f6560113db"
+dependencies = [
+ "async-trait",
+ "config",
+ "deadpool",
+ "log",
+ "redis",
+ "serde 1.0.126",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -793,6 +834,12 @@ name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
+name = "dtoa"
+version = "0.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56899898ce76aaf4a0f24d914c97ea6ed976d42fec6ad33fcbb0a1103e07b2b0"
 
 [[package]]
 name = "either"
@@ -1626,6 +1673,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
 dependencies = [
  "rand_core",
+]
+
+[[package]]
+name = "redis"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4d99f2a2f80b100036dde5f8ae106546196592751f35c7afb58ec0683059a3e"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "combine",
+ "dtoa",
+ "futures-util",
+ "itoa",
+ "percent-encoding",
+ "pin-project-lite",
+ "sha1",
+ "tokio",
+ "tokio-util",
+ "url",
 ]
 
 [[package]]
@@ -2489,11 +2556,13 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "config",
+ "deadpool-redis",
  "dotenv",
  "env_logger",
  "futures",
  "jsonwebtoken",
  "lazy_static",
+ "redis",
  "ring",
  "serde 1.0.126",
  "serde_json",

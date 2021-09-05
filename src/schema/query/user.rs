@@ -14,7 +14,6 @@ use crate::{
 #[derive(Debug)]
 enum UserQueryError {
     DbError(sqlx::Error),
-    NotAuthorized,
     NotFound,
 }
 
@@ -22,7 +21,6 @@ impl Error for UserQueryError {
     fn message(&self) -> String {
         match self {
             UserQueryError::DbError(_) => "Database error",
-            UserQueryError::NotAuthorized => "Not authorized",
             UserQueryError::NotFound => "Not found",
         }
         .to_owned()
@@ -40,14 +38,15 @@ pub struct UserQuery;
 impl UserQuery {
     async fn me(&self, ctx: &Context<'_>) -> Result<User> {
         let pool = ctx.data::<PgPool>()?;
-        let AuthInfo { user_id } = ctx.data::<AuthInfo>()?;
+        let auth_info = ctx.data::<AuthInfo>()?;
+        let user_id = auth_info.get_user_id().map_err(|e| e.build())?;
 
         let user = sqlx::query!(
             r#"
             SELECT * FROM public.user
             WHERE id = $1
             "#,
-            user_id.ok_or(UserQueryError::NotAuthorized.build())?
+            user_id,
         )
         .fetch_optional(pool)
         .await

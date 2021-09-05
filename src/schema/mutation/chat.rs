@@ -15,14 +15,12 @@ use crate::{
 
 #[derive(Debug)]
 enum ChatMutationError {
-    NotAuthorized,
     InvalidTargetId(IdDataError),
 }
 
 impl Error for ChatMutationError {
     fn message(&self) -> String {
         match self {
-            ChatMutationError::NotAuthorized => "Not authorized",
             ChatMutationError::InvalidTargetId(_) => "Invalid target ID",
         }
         .to_owned()
@@ -44,9 +42,9 @@ impl ChatMutation {
         target_id: ID,
         message: String,
     ) -> Result<Chat> {
-        let AuthInfo { user_id } = ctx.data::<AuthInfo>()?;
+        let auth_info = ctx.data::<AuthInfo>()?;
         let chat_tx = ctx.data::<Sender<ChatData>>()?;
-        let sender_id = user_id.ok_or(ChatMutationError::NotAuthorized.build())?;
+        let sender_id = auth_info.get_user_id().map_err(|e| e.build())?;
         let target_uuid = IdData::try_from(target_id)
             .map_err(|e| ChatMutationError::InvalidTargetId(e).build())?
             .uuid;
