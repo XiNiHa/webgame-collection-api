@@ -68,18 +68,16 @@ impl AuthInfo {
             return valid;
         }
 
-        let valid = {
-            if let Some(auth_token) = &self.auth_token {
+        let valid = match &self.auth_token {
+            Some(auth_token) => {
                 let result = redis::cmd("GET")
                     .arg(get_invalid_token_key(auth_token))
-                    .query_async::<_, Option<String>>(redis_conn)
+                    .query_async::<_, Option<i64>>(redis_conn)
                     .await;
-                if let Ok(None) = result {
-                    return true;
-                }
-            }
 
-            false
+                result.map(|opt| opt.is_none()).unwrap_or(false)
+            }
+            None => false,
         };
 
         self.valid = Some(valid);
