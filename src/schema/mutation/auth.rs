@@ -5,21 +5,26 @@ use webgame_collection_api_macros::Error;
 
 use crate::{
     auth::{
-        auth_info::{AuthError, AuthInfo},
-        login::{create_login_result, register_refresh_token, verify_auth_method},
+        auth_info::AuthInfo,
+        login::{create_access_token, verify_auth_method},
         password_data::PasswordData,
+        refresh::{
+            check_refresh, create_refresh_token, register_refresh_token, RefreshCheckResult,
+        },
         register::register,
         AuthMethodType,
     },
     config::CONFIG,
     error::Error,
-    schema::types::user::{LoginResult, User, UserRegisterInput},
+    schema::types::user::{LoginResult, RefreshResult, User, UserRegisterInput},
 };
 
 #[derive(Error)]
 pub enum AuthMutationError {
     #[error(message = "Redis error")]
     RedisError(redis::RedisError),
+    #[error(message = "Token creation failed")]
+    TokenCreationFailed,
 }
 
 #[derive(Default)]
@@ -64,27 +69,72 @@ impl AuthMutation {
             .await
             .map_err(|e| e.build())?;
 
-        let login_result =
-            create_login_result(&user_id, &CONFIG.jwt_secret, CONFIG.refresh_token_size)
-                .map_err(|e| e.build())?;
+        let access_token = create_access_token(&user_id, &CONFIG.jwt_secret)
+            .ok_or(AuthMutationError::TokenCreationFailed.build())?;
+        let refresh_token = create_refresh_token(CONFIG.refresh_token_size)
+            .ok_or(AuthMutationError::TokenCreationFailed.build())?;
 
-        register_refresh_token(&login_result.refresh_token, &mut redis_conn)
+        register_refresh_token(&refresh_token, &mut redis_conn)
             .await
-            .map_err(|e| e.build())?;
+            .map_err(|e| AuthMutationError::RedisError(e).build())?;
 
-        Ok(Some(login_result))
+        Ok(Some(LoginResult {
+            access_token,
+            refresh_token,
+        }))
     }
 
     async fn logout(&self, ctx: &Context<'_>) -> Result<bool> {
-        let auth_info = ctx
-            .data::<Option<AuthInfo>>()?
-            .as_ref()
-            .ok_or(AuthError::Invalidated.build())?;
+        let auth_info = ctx.data::<AuthInfo>()?;
         let mut redis_conn = ctx.data::<deadpool_redis::Pool>()?.get().await?;
 
         auth_info
             .invalidate(&mut redis_conn)
             .await
             .map_err(|e| AuthMutationError::RedisError(e).build())
+    }
+
+    async fn refresh_auth(
+        &self,
+        ctx: &Context<'_>,
+        refresh_token: String,
+    ) -> Result<Option<RefreshResult>> {
+        let auth_info = ctx.data::<AuthInfo>()?;
+        let mut redis_conn = ctx.data::<deadpool_redis::Pool>()?.get().await?;
+        let user_id = auth_info.get_user_id().map_err(|e| e.build())?;
+
+        let refresh_check_result = check_refresh(&refresh_token, &mut redis_conn)
+            .await
+            .map_err(|e| AuthMutationError::RedisError(e).build())?;
+
+        let access_token = match refresh_check_result {
+            RefreshCheckResult::Both | RefreshCheckResult::OnlyAccessToken => {
+                let token = create_access_token(&user_id, &CONFIG.jwt_secret)
+                    .ok_or(AuthMutationError::TokenCreationFailed.build())?;
+
+                auth_info
+                    .invalidate(&mut redis_conn)
+                    .await
+                    .map_err(|e| AuthMutationError::RedisError(e).build())?;
+
+                Some(token)
+            }
+            _ => None,
+        };
+        let refresh_token = match refresh_check_result {
+            RefreshCheckResult::Both => Some(
+                create_refresh_token(CONFIG.refresh_token_size)
+                    .ok_or(AuthMutationError::TokenCreationFailed.build())?,
+            ),
+            _ => None,
+        };
+
+        match access_token {
+            Some(access_token) => Ok(Some(RefreshResult {
+                access_token,
+                refresh_token,
+            })),
+            None => Ok(None),
+        }
     }
 }

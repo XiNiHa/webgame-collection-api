@@ -1,14 +1,11 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
-use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 use webgame_collection_api_macros::Error;
 
-use crate::schema::types::user::LoginResult;
-
-use super::{password_data::PasswordData, AuthMethodType, REF_TOKEN_REDIS_KEY};
+use super::{password_data::PasswordData, AuthMethodType};
 
 #[derive(Error)]
 pub enum LoginError {
@@ -22,10 +19,6 @@ pub enum LoginError {
     InvalidMethodData,
     #[error(message = "Wrong password")]
     WrongPassword,
-    #[error(message = "Token creation failed")]
-    TokenCreationFailed,
-    #[error(message = "Token registration failed")]
-    TokenRegistrationFailed(redis::RedisError),
 }
 
 pub async fn verify_auth_method(
@@ -74,42 +67,14 @@ pub struct Claims {
     pub exp: usize,
 }
 
-pub fn create_login_result(
-    uuid: &Uuid,
-    secret: &[u8],
-    refresh_token_size: usize,
-) -> Result<LoginResult, LoginError> {
+pub fn create_access_token(uuid: &Uuid, secret: &[u8]) -> Option<String> {
     let header = Header::new(Algorithm::HS512);
     let claims = Claims {
         sub: uuid.to_string(),
         exp: Utc::now()
-            .checked_add_signed(Duration::hours(1))
-            .ok_or(LoginError::TokenCreationFailed)?
+            .checked_add_signed(Duration::hours(1))?
             .timestamp() as usize,
     };
 
-    let access_token = jsonwebtoken::encode(&header, &claims, &EncodingKey::from_secret(secret))
-        .map_err(|_| LoginError::TokenCreationFailed)?;
-
-    let mut buf: Vec<u8> = vec![0; refresh_token_size];
-    let rng = SystemRandom::new();
-    rng.fill(&mut buf)
-        .map_err(|_| LoginError::TokenCreationFailed)?;
-    let refresh_token = base64::encode(&buf);
-
-    Ok(LoginResult {
-        access_token,
-        refresh_token,
-    })
-}
-
-pub async fn register_refresh_token(
-    refresh_token: &str,
-    redis_conn: &mut deadpool_redis::Connection,
-) -> Result<(), LoginError> {
-    redis::cmd("RPUSH")
-        .arg(&[REF_TOKEN_REDIS_KEY, refresh_token])
-        .query_async(redis_conn)
-        .await
-        .map_err(LoginError::TokenRegistrationFailed)
+    jsonwebtoken::encode(&header, &claims, &EncodingKey::from_secret(secret)).ok()
 }

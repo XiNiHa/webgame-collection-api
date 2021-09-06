@@ -23,3 +23,9 @@ pub struct LoginResult {
     pub access_token: String,
     pub refresh_token: String,
 }
+
+#[derive(SimpleObject)]
+pub struct RefreshResult {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
+}

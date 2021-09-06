@@ -90,13 +90,14 @@ impl AuthInfo {
     ) -> Result<bool, redis::RedisError> {
         if let (Some(auth_token), Some(token_exp)) = (&self.auth_token, &self.token_exp) {
             let key = get_invalid_token_key(auth_token);
+            let token_exp = token_exp.to_string();
 
             return redis::pipe()
                 .cmd("SET")
-                .arg(&[&key, &key])
+                .arg(&[&key, &token_exp])
                 .ignore()
                 .cmd("EXPIREAT")
-                .arg(&[&key, &token_exp.to_string()])
+                .arg(&[&key, &token_exp])
                 .query_async(redis_conn)
                 .await
                 .map(|_: ()| {
