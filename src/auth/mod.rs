@@ -13,6 +13,7 @@ pub enum AuthMethodType {
 }
 
 static INV_AUTH_TOKEN_REDIS_KEY: &str = "auth/invalidated_auth_token:";
+static REF_TOKEN_REDIS_KEY: &str = "auth/refresh_token:";
 
 pub fn get_invalid_token_key(token: &str) -> String {
     let mut key = INV_AUTH_TOKEN_REDIS_KEY.to_owned();

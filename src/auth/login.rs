@@ -24,6 +24,8 @@ pub enum LoginError {
     WrongPassword,
     #[error(message = "Token creation failed")]
     TokenCreationFailed,
+    #[error(message = "Token registration failed")]
+    TokenRegistrationFailed(redis::RedisError),
 }
 
 pub async fn verify_auth_method(
@@ -99,4 +101,15 @@ pub fn create_login_result(
         access_token,
         refresh_token,
     })
+}
+
+pub async fn register_refresh_token(
+    refresh_token: &str,
+    redis_conn: &mut deadpool_redis::Connection,
+) -> Result<(), LoginError> {
+    redis::cmd("RPUSH")
+        .arg(&[REF_TOKEN_REDIS_KEY, refresh_token])
+        .query_async(redis_conn)
+        .await
+        .map_err(LoginError::TokenRegistrationFailed)
 }

@@ -68,6 +68,10 @@ impl AuthMutation {
             create_login_result(&user_id, &CONFIG.jwt_secret, CONFIG.refresh_token_size)
                 .map_err(|e| e.build())?;
 
+        register_refresh_token(&login_result.refresh_token, &mut redis_conn)
+            .await
+            .map_err(|e| e.build())?;
+
         Ok(Some(login_result))
     }
 
